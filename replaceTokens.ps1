@@ -1,3 +1,7 @@
+Write-Host "Replace Tokens"
+
+#settings FileName
+$appsettingsName = "appsettings.infra.json"
 # Enter to folder
 cd $(System.DefaultWorkingDirectory)
 # loop searching zips with .json configurations
@@ -8,8 +12,6 @@ cd ($MainDirectory)
 
 $directories =Get-ChildItem -Directory | %{$_.Name} 
 
-$alias = $(Release.PrimaryArtifactSourceAlias)
-$artifact = $(Release.Artifacts.$alias.DefinitionName)
 foreach($directory in $directories) 
 { 
      cd ($directory)
@@ -22,31 +24,30 @@ foreach($directory in $directories)
           mkdir ($newFolder)
           #Unzip All files
           Expand-Archive -Path $file -DestinationPath $newFolder
-          cd ($newFolder)
+          #cd ($newFolder)
           #Work whit the settings file
 
-          $fileReplace = "appsettings.infra.json"
+          $fileReplace = $newFolder+"/"+$appsettingsName
           $foo = Get-Content -Raw -Path $fileReplace | ConvertFrom-Json
 
           $objMembers = $foo.psobject.Members | where-object membertype -like 'noteproperty'   
           foreach ( $member in $objMembers ) { 
-          $tmpVal = gci env: | where name -eq $member.name
-          if (-not ([string]::IsNullOrEmpty($tmpVal)))
-          {
-               $member.Value = $tmpVal
-          }
+            $tmpVal = gci env: | where name -eq $member.name
+            if (-not ([string]::IsNullOrEmpty($tmpVal)))
+            {
+                $member.Value = $tmpVal
+            }
           }
 
           Remove-Item –path $fileReplace
           $foo | ConvertTo-Json | Out-File $fileReplace
+          Compress-Archive -Path $fileReplace -Update -DestinationPath $file
           Get-Content -path $fileReplace
-          #ZipEntireFiles
-          Compress-Archive -Path ./* -DestinationPath ../$file -Force    
-          #End of work with folder
-          cd ..     
+          #cd ..     
           Remove-Item $newFolder -Confirm:$false -Force -Recurse
      }
 
      #Exit of folder
     
 }
+Write-Host "End of Replace Tokens"
