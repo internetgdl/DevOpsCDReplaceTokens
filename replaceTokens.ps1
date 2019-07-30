@@ -1,4 +1,4 @@
-Write-Host "Replace Tokens"
+write-Host "Replace Tokens"
 
 #settings FileName
 $appsettingsName = "appsettings.infra.json"
@@ -27,8 +27,9 @@ foreach($directory in $directories)
           #cd ($newFolder)
           #Work whit the settings file
 
-          $fileReplace = $newFolder+"/"+$appsettingsName
-          $foo = Get-Content -Raw -Path $fileReplace | ConvertFrom-Json
+          $fileReplace = "./"+$newFolder+"/"+$appsettingsName
+          #$foo = Get-Content -Raw -Path $fileReplace | ConvertFrom-Json
+          $foo = (Get-Content $fileReplace) -replace '^\s*//.*' | Out-String | ConvertFrom-Json
 
           $objMembers = $foo.psobject.Members | where-object membertype -like 'noteproperty'   
           foreach ( $member in $objMembers ) { 
