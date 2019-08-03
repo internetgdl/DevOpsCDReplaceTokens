@@ -1,8 +1,10 @@
 write-Host "Replace Tokens"
 
-#settings FileName
+# settings FileName
 $appsettingsName = "appsettings.infra.json"
+
 # Enter to folder
+
 cd $(System.DefaultWorkingDirectory)
 # loop searching zips with .json configurations
 
@@ -38,17 +40,12 @@ foreach($directory in $directories)
             {
                 $member.Value = $tmpVal
             }
-          }
+        }
+        Remove - Item– path $fileReplace
+        $foo | ConvertTo - Json | Out - File $fileReplace
+        Compress - Archive - Path $fileReplace - Update - DestinationPath $file
+        Remove - Item $newFolder - Confirm: $false - Force - Recurse
+    }
 
-          Remove-Item –path $fileReplace
-          $foo | ConvertTo-Json | Out-File $fileReplace
-          Compress-Archive -Path $fileReplace -Update -DestinationPath $file
-          Get-Content -path $fileReplace
-          #cd ..     
-          Remove-Item $newFolder -Confirm:$false -Force -Recurse
-     }
-
-     #Exit of folder
-    
 }
-Write-Host "End of Replace Tokens"
+Write - Host "End of Replace Tokens"
