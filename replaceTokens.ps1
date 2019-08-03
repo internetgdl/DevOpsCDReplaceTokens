@@ -59,7 +59,6 @@ foreach($directory in $directories) {
                 $match = $secretVariables - match($member.name)
                 if ($match) {
                     $secretVariableRef = gci env: "secret_"
-                    $match# $member.Value = $secretVariableRef
                 }
             }
         }
