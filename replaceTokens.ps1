@@ -8,15 +8,16 @@ $appsettingsName = "appsettings.infra.json"
 
 #Function
 
-function GetJsonMembers($fooString) {
+function GetJsonMembers($fooJson) {
 
-    $fooJson = $fooString | ConvertFrom-Json 
+    # $fooJson = $fooString | ConvertFrom-Json 
     $objMembers = $fooJson.psobject.Members | where-object membertype -like 'noteproperty'  
  
     if ($objMembers -is [System.array]) {
         foreach ( $member in $objMembers ) {
+            $env;
             if ($member.Value -is [System.Management.Automation.PSCustomObject]) {
-                GetJsonMembers($member.Value | ConvertTo-Json)
+                $member.Value = GetJsonMembers($member.Value) | ConvertTo-Json
             }
             else {
                 $tmpVal = gci env: | where name -eq $member.name
@@ -32,12 +33,14 @@ function GetJsonMembers($fooString) {
             }
         }
     } 
+    return $fooJson -replace '^\s*//.*' | Out-String | ConvertFrom-Json
 }
 
 # Enter to folder
 
 cd $(System.DefaultWorkingDirectory)
-Write-Host $(System.DefaultWorkingDirectory)
+#Write-Host $(System.DefaultWorkingDirectory)
+
 $MainDirectory = Get-ChildItem -Directory | % { $_.Name } | Select-Object -last 1 
 Write-Host  $MainDirectory
 cd ($MainDirectory)
@@ -66,12 +69,11 @@ foreach ($directory in $directories) {
         $fileReplace = ("./" + $newFolder + "/" + $appsettingsName)
         Write-Host "before replace:"
         Write-Host $fileReplace
-
-        $foo = (Get-Content $fileReplace) -replace '^\s*//.*' | Out-String  
-        GetJsonMembers($foo)
+        $foo = (Get-Content $fileReplace) 
+        $fooJson = GetJsonMembers($foo)
 
         Remove-Item –path $fileReplace
-        $foo | ConvertTo-Json | Out-File $fileReplace
+        $fooJson | ConvertTo-Json | Out-File $fileReplace
         Compress-Archive -Path $fileReplace -Update -DestinationPath $file
         Remove-Item $newFolder -Confirm:$false -Force -Recurse
     }
