@@ -1,7 +1,10 @@
 Write-Host "Start of Replace Tokens"
-$secretVariablesString = gci env:VSTS_SECRET_VARIABLES
-$secretVariablesString = $secretVariablesString.Value.replace("[", "").replace("]", "").replace('"', "");
-$secretVariables = $secretVariablesString.split(",")
+if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES'))
+{
+     $secretVariablesString = gci env:VSTS_SECRET_VARIABLES
+     $secretVariablesString = $secretVariablesString.Value.replace("[", "").replace("]", "").replace('"', "");
+     $secretVariables = $secretVariablesString.split(",")
+}
 
 #settings FileName
 $appsettingsName = "appsettings.infra.json"
