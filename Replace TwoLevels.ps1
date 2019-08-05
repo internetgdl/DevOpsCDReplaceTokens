@@ -12,8 +12,10 @@ function GetJsonMembers($fooString) {
             } else {
                 $submember.Value
             }
+
         }
     } 
 }
  $foo = (Get-Content $fileReplace) -replace '^\s*//.*'| Out-String  
  GetJsonMembers($foo)
+         
