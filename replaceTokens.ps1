@@ -11,18 +11,15 @@ if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES'))
 $appsettingsName = "appsettings.infra.json"
 
 #Function
-function GetEnvValue($member){
-    $tmpVal = gci env: | where name -eq $member.name
-    if (-not ([string]::IsNullOrEmpty($tmpVal))) {
-        $member.Value = $tmpVal.Value
-    }
-    else {
-        $match = $secretVariables -match ($member.name) 
+function GetEnvValue($memberName){
+    $tmpVal = gci env: | where name -eq $memberName
+    if ([string]::IsNullOrEmpty($tmpVal)){
+        $match = $secretVariables -match ($memberName) 
         if ($match) {
-            $member.Value = gci env:"secret_"$match
+            $tmpVal = (gci env:"secret_"$match).Value
         }
     }
-    return $member
+    return $tmpVal
 }
 function GetJsonMembers($fooJson) {
    # $fooJson = $fooJson | ConvertFrom-Json 
@@ -33,11 +30,18 @@ function GetJsonMembers($fooJson) {
                 $member.Value = GetJsonMembers($member.Value)
             }
             else {
-                $member.Value = GetEnvValue($member).Value
+                $tmpVal = GetEnvValue($member.Name)
+                if (-not [string]::IsNullOrEmpty($tmpVal)){
+                    $member.Value = $tmpVal
+                }
+               
             }
         }
     } else {
-        $member.Value = GetEnvValue($member);
+        $tmpVal = GetEnvValue($member.Name).Value
+                if (-not [string]::IsNullOrEmpty($tmpVal)){
+                    $member.Value = $tmpVal
+                }
     } 
     return $fooJson
 }
