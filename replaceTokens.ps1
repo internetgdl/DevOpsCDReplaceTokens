@@ -1,28 +1,40 @@
 Write-Host "Start of Replace Tokens"
-$secretVariables = @()
-if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES'))
-{
-     $secretVariablesString = gci env:VSTS_SECRET_VARIABLES
-     $secretVariablesString = $secretVariablesString.Value.replace("[", "").replace("]", "").replace('"', "");
-     $secretVariables = $secretVariablesString.split(",")
+if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES')) {
+    $secretVariablesString = gci env:VSTS_SECRET_VARIABLES
+    $secretVariablesString
+    $secretVariablesString = $secretVariablesString.Value.replace("[", "").replace("]", "").replace('"', "");
+    $secretVariablesString
+    $secretVariables = $secretVariablesString.split(",")
+    $secretVariables
+}
+else {
+    $secretVariables = @()
 }
 
 #settings FileName
 $appsettingsName = "appsettings.infra.json"
 
 #Function
-function GetEnvValue($memberName){
-    $tmpVal = gci env: | where name -eq $memberName
-    if ([string]::IsNullOrEmpty($tmpVal)){
-        $match = $secretVariables -match ($memberName) 
-        if ($match) {
-            $tmpVal = (gci env:"secret_"$match).Value
+function GetEnvValue($memberName) {
+    if (-not [string]::IsNullOrEmpty($memberName)) {
+    
+        $tmpVal = gci env: | where name -eq $memberName
+        if ([string]::IsNullOrEmpty($tmpVal)) {
+       
+            $match = $secretVariables -match ($memberName) 
+        
+            if ($match) {
+                Write-Host $memberName
+                Write-Host $secretVariables
+                Write-Host $match
+                $tmpVal = (gci env:"secret_"$memberName).Value
+            }
         }
     }
     return $tmpVal
 }
 function GetJsonMembers($fooJson) {
-   # $fooJson = $fooJson | ConvertFrom-Json 
+    # $fooJson = $fooJson | ConvertFrom-Json 
     $objMembers = $fooJson.psobject.Members | where-object membertype -like 'noteproperty'  
     if ($objMembers -is [System.array]) {
         foreach ( $member in $objMembers ) {
@@ -31,17 +43,18 @@ function GetJsonMembers($fooJson) {
             }
             else {
                 $tmpVal = GetEnvValue($member.Name)
-                if (-not [string]::IsNullOrEmpty($tmpVal)){
+                if (-not [string]::IsNullOrEmpty($tmpVal)) {
                     $member.Value = $tmpVal
                 }
                
             }
         }
-    } else {
+    }
+    else {
         $tmpVal = GetEnvValue($member.Name).Value
-                if (-not [string]::IsNullOrEmpty($tmpVal)){
-                    $member.Value = $tmpVal
-                }
+        if (-not [string]::IsNullOrEmpty($tmpVal)) {
+            $member.Value = $tmpVal
+        }
     } 
     return $fooJson
 }
@@ -82,17 +95,18 @@ foreach ($directory in $directories) {
 
         Get-ChildItem -Path $fileReplace | 
         ForEach-Object -Process {
-        try {
-            $foo = ((Get-Content -Path $fileReplace) -replace '^\s*//.*' | Out-String | ConvertFrom-Json )  
-            $fooJson = GetJsonMembers($foo)
-            Remove-Item –path $fileReplace
-            $fooJson | ConvertTo-Json | Out-File $fileReplace
-            Compress-Archive -Path $fileReplace -Update -DestinationPath $file
-            Remove-Item $newFolder -Confirm:$false -Force -Recurse
-        } catch {
-            write-host "can't convert file '$fileReplace' to JSON"
-        }
-    } | Group-Object message -NoElement
+            try {
+                $foo = ((Get-Content -Path $fileReplace) -replace '^\s*//.*' | Out-String | ConvertFrom-Json )  
+                $fooJson = GetJsonMembers($foo)
+                Remove-Item –path $fileReplace
+                $fooJson | ConvertTo-Json | Out-File $fileReplace
+                Compress-Archive -Path $fileReplace -Update -DestinationPath $file
+                Remove-Item $newFolder -Confirm:$false -Force -Recurse
+            }
+            catch {
+                write-host "can't convert file '$fileReplace' to JSON"
+            }
+        } | Group-Object message -NoElement
 
         
     }
