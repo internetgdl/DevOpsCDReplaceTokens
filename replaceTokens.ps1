@@ -1,4 +1,5 @@
 Write-Host "Start of Replace Tokens"
+$secretVariables = @()
 if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES'))
 {
      $secretVariablesString = gci env:VSTS_SECRET_VARIABLES
@@ -10,7 +11,19 @@ if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES'))
 $appsettingsName = "appsettings.infra.json"
 
 #Function
-
+function GetEnvValue($member){
+    $tmpVal = gci env: | where name -eq $member.name
+    if (-not ([string]::IsNullOrEmpty($tmpVal))) {
+        $member.Value = $tmpVal.Value
+    }
+    else {
+        $match = $secretVariables -match ($member.name) 
+        if ($match) {
+            $member.Value = gci env:"secret_"$match
+        }
+    }
+    return $member
+}
 function GetJsonMembers($fooJson) {
    # $fooJson = $fooJson | ConvertFrom-Json 
     $objMembers = $fooJson.psobject.Members | where-object membertype -like 'noteproperty'  
@@ -20,25 +33,18 @@ function GetJsonMembers($fooJson) {
                 $member.Value = GetJsonMembers($member.Value)
             }
             else {
-                $tmpVal = gci env: | where name -eq $member.name
-                if (-not ([string]::IsNullOrEmpty($tmpVal))) {
-                    $member.Value = $tmpVal.Value
-                }
-                else {
-                    $match = $secretVariables -match ($member.name) 
-                    if ($match) {
-                        $secretVariableRef = gci env:"secret_"$match
-                    }
-                }
+                $member.Value = GetEnvValue($member).Value
             }
         }
+    } else {
+        $member.Value = GetEnvValue($member);
     } 
     return $fooJson
 }
 
 # Enter to folder
 
-#cd $(System.DefaultWorkingDirectory)
+cd $(System.DefaultWorkingDirectory)
 #Write-Host $(System.DefaultWorkingDirectory)
 
 $MainDirectory = Get-ChildItem -Directory | % { $_.Name } | Select-Object -last 1 
