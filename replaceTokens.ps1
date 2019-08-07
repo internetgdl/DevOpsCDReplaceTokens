@@ -1,11 +1,8 @@
 Write-Host "Start of Replace Tokens"
 if ([Environment]::GetEnvironmentVariable('VSTS_SECRET_VARIABLES')) {
     $secretVariablesString = gci env:VSTS_SECRET_VARIABLES
-    $secretVariablesString
     $secretVariablesString = $secretVariablesString.Value.replace("[", "").replace("]", "").replace('"', "");
-    $secretVariablesString
     $secretVariables = $secretVariablesString.split(",")
-    $secretVariables
 }
 else {
     $secretVariables = @()
