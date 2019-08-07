@@ -31,7 +31,7 @@ function GetEnvValue($memberName) {
             }
         }
     }
-    return $tmpVal
+    return $tmpVal.Value
 }
 function GetJsonMembers($fooJson) {
     # $fooJson = $fooJson | ConvertFrom-Json 
