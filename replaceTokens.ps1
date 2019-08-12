@@ -17,7 +17,7 @@ $appsettingsName = "appsettings.infra.json"
 #Function
 function GetEnvValue($memberName) {
     if (-not [string]::IsNullOrEmpty($memberName)) {
-    
+        $memberName = $memberName.replace(".","_");
         $tmpVal = gci env: | where name -eq $memberName
         if ([string]::IsNullOrEmpty($tmpVal)) {
        
